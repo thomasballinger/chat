@@ -2,7 +2,7 @@ import asyncio
 import urllib.parse
 import sys
 
-from chat import CharacterAtATime
+from oldchat import CharacterAtATime
 
 @asyncio.coroutine
 def listen_to_server(reader):
