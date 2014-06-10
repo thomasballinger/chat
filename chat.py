@@ -1,56 +1,29 @@
+import asyncio
+import urllib.parse
 import sys
-import select
-import socket
-import termios, fcntl, sys, os, select, socket, threading, time
 
-# code that sets up stdin to be happen one key at a time
+from chat import CharacterAtATime
 
-class CharacterAtATime(object):
-    def __enter__(self):
-        self.fd = sys.stdin.fileno()
-        self.oldterm = termios.tcgetattr(self.fd)
-        newattr = self.oldterm[:]
-        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-        termios.tcsetattr(self.fd, termios.TCSANOW, newattr)
-        self.oldflags = fcntl.fcntl(self.fd, fcntl.F_GETFL)
-        fcntl.fcntl(self.fd, fcntl.F_SETFL, self.oldflags | os.O_NONBLOCK)
-    def __exit__(self, *args):
-        termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.oldterm)
-        fcntl.fcntl(self.fd, fcntl.F_SETFL, self.oldflags)
+@asyncio.coroutine
+def listen_to_server(reader):
+    while True:
+        line = yield from reader.read(1)
+        if not line:
+            break
+        print('line:', line)
 
+@asyncio.coroutine
+def connect(loop):
+    server_reader, server_writer = yield from asyncio.open_connection('localhost', 1234)
 
-class Keyboard(object):
-    def __init__(self, where_to_send_keypresses):
-        self.sock = where_to_send_keypresses
-    def fileno(self):
-        return sys.stdin.fileno()
-    def on_read(self):
-        c = sys.stdin.read(1)
-        self.sock.send(c)
+    asyncio.async(listen_to_server(server_reader))
+    def on_stdin_read():
+        print('reading on stdin')
+        server_writer.write(sys.stdin.readline().encode('ascii'))
+    loop.add_reader(sys.stdin, on_stdin_read)
 
-class Connection(object):
-    def __init__(self, sock):
-        self.sock = sock
-    def fileno(self):
-        return self.sock.fileno()
-    def on_read(self):
-        print(self.sock.recv(1))
+loop = asyncio.get_event_loop()
+asyncio.async(connect(loop))
 
-def main():
-    with CharacterAtATime():
-        client = socket.socket()
-        client.connect(('localhost', 1234))
-        client.setblocking(False)
-
-        while True:
-            ready_to_read, _, _ = select.select([Connection(client), Keyboard(client)], [], [])
-            for r in ready_to_read:
-                r.on_read()
-
-        #loop_fovers()
-
-
-    print('we have now exited the with statement')
-
-if __name__ == '__main__':
-    main()
+with CharacterAtATime():
+    loop.run_forever()
