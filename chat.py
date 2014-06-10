@@ -47,6 +47,10 @@ def main():
             for r in ready_to_read:
                 r.on_read()
 
+        
+        #loop_fovers()
+
+
     print('we have now exited the with statement')
 
 
