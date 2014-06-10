@@ -34,7 +34,7 @@ class Connection(object):
     def fileno(self):
         return self.sock.fileno()
     def on_read(self):
-        print self.sock.recv(1)
+        print(self.sock.recv(1))
 
 def main():
     with CharacterAtATime():
@@ -47,7 +47,7 @@ def main():
             for r in ready_to_read:
                 r.on_read()
 
-    print 'we have now exited the with statement'
+    print('we have now exited the with statement')
 
 
 main()
