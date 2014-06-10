@@ -19,7 +19,18 @@ class Input(object):
     def get_key(self):
         """Returns None if no keypress is yet available"""
         data = os.read(sys.stdin.fileno(), 1000)
-        return data.decode('utf8')
+        keys = {
+                b'\x1b[A':'<RIGHT>',
+                b'\x1b[B':'<DOWN>',
+                b'\x1b[C':'<RIGHT>',
+                b'\x1b[D':'<LEFT>',
+               }
+        if data in keys:
+            e = keys[data]
+        else:
+            e = data.decode('utf8')
+        print('os.read bytes:', repr(data), 'so returning', e)
+        return e
 
 @asyncio.coroutine
 def listen_to_server(reader):
