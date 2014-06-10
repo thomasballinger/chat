@@ -5,11 +5,11 @@ import os
 
 from oldchat import CharacterAtATime
 
-def green(msg):
+def red_on_blue(msg):
     sys.stdout.write('\x1b[31m\x1b[44m' + msg + '\x1b[49m\x1b[39m')
     sys.stdout.flush()
 
-def yellow(msg):
+def blue_on_red(msg):
     sys.stdout.write('\x1b[34m\x1b[41m' + msg + '\x1b[49m\x1b[39m')
     sys.stdout.flush()
 
@@ -38,7 +38,7 @@ def listen_to_server(reader):
         c = yield from reader.read(1)
         if not c:
             break
-        yellow(c.decode('utf8'))
+        blue_on_red(c.decode('utf8'))
 
 @asyncio.coroutine
 def connect(loop):
@@ -50,7 +50,7 @@ def connect(loop):
         c = in_gen.get_key()
         if c is None:
             return
-        green(c)
+        red_on_blue(c)
         server_writer.write(c.encode('utf8'))
     loop.add_reader(sys.stdin, on_stdin_read)
 
