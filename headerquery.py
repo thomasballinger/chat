@@ -2,6 +2,8 @@ import asyncio
 import urllib.parse
 import sys
 
+from chat import CharacterAtATime
+
 @asyncio.coroutine
 def listen_to_server(reader):
     while True:
@@ -22,5 +24,6 @@ def connect(loop):
 
 loop = asyncio.get_event_loop()
 asyncio.async(connect(loop))
-loop.run_forever()
-loop.close()
+
+with CharacterAtATime():
+    loop.run_forever()
