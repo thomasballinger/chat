@@ -19,6 +19,23 @@ class CharacterAtATime(object):
         fcntl.fcntl(self.fd, fcntl.F_SETFL, self.oldflags)
 
 
+class Keyboard(object):
+    def __init__(self, where_to_send_keypresses):
+        self.sock = where_to_send_keypresses
+    def fileno(self):
+        return sys.stdin.fileno()
+    def on_read(self):
+        c = sys.stdin.read(1)
+        self.sock.send(c)
+
+class Connection(object):
+    def __init__(self, sock):
+        self.sock = sock
+    def fileno(self):
+        return self.sock.fileno()
+    def on_read(self):
+        print self.sock.recv(1)
+
 def main():
     with CharacterAtATime():
         client = socket.socket()
@@ -26,14 +43,9 @@ def main():
         client.setblocking(False)
 
         while True:
-            ready_to_read, _, _ = select.select([client, sys.stdin], [], [])
+            ready_to_read, _, _ = select.select([Connection(client), Keyboard(client)], [], [])
             for r in ready_to_read:
-                if r == sys.stdin:
-                    c = sys.stdin.read(1)
-                    print c
-                    client.send(c)
-                elif r is client:
-                    print client.recv(1)
+                r.on_read()
 
     print 'we have now exited the with statement'
 
