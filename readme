@@ -1,1 +1,5 @@
 character-at-a-time terminal chat client using cool Python3.4 stuff
+
+
+to try, run chatserver.py in one terminal and two instances of either
+`python3 chat.py` or `python2 oldchat.py`
