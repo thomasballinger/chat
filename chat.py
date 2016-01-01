@@ -2,8 +2,21 @@ import asyncio
 import urllib.parse
 import sys
 import os
+import termios
+import fcntl
 
-from oldchat import CharacterAtATime
+class CharacterAtATime(object):
+    def __enter__(self):
+        self.fd = sys.stdin.fileno()
+        self.oldterm = termios.tcgetattr(self.fd)
+        newattr = self.oldterm[:]
+        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+        termios.tcsetattr(self.fd, termios.TCSANOW, newattr)
+        self.oldflags = fcntl.fcntl(self.fd, fcntl.F_GETFL)
+        fcntl.fcntl(self.fd, fcntl.F_SETFL, self.oldflags | os.O_NONBLOCK)
+    def __exit__(self, *args):
+        termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.oldterm)
+        fcntl.fcntl(self.fd, fcntl.F_SETFL, self.oldflags)
 
 def red_on_blue(msg):
     sys.stdout.write('\x1b[31m\x1b[44m' + msg + '\x1b[49m\x1b[39m')
@@ -29,7 +42,7 @@ class Input(object):
             e = keys[data]
         else:
             e = data.decode('utf8')
-        print('os.read bytes:', repr(data), 'so returning', e)
+        #print('os.read bytes:', repr(data), 'so returning', e)
         return e
 
 @asyncio.coroutine

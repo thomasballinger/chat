@@ -27,6 +27,7 @@ class Keyboard(object):
     def on_read(self):
         c = sys.stdin.read(1)
         self.sock.send(c)
+        print 'sending', c
 
 class Connection(object):
     def __init__(self, sock):
