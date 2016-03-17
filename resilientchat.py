@@ -1,12 +1,25 @@
 import select
 import socket
-import sys
+import os
 
 ips_by_socket = {}
 
+
+def get_ip_blacklist():
+    if os.path.exists('ipblacklist.txt'):
+        return open('ipblacklist.txt').read().split()
+    else:
+        return []
+
+
+def add_to_blacklist(ip):
+    with open('ipblacklist.txt', 'a') as f:
+        f.write(ip)
+
+
 def main():
 
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server = socket.socket()
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('', 1234))
     server.listen(5)
@@ -14,6 +27,7 @@ def main():
     clients = []
 
     while True:
+        blacklist = get_ip_blacklist()
         ready_to_read, _, error = select.select(clients + [server], [], [])
         if error:
             print('errors:', error)
@@ -29,12 +43,20 @@ def main():
                     r.close()
                     clients.remove(r)
                     msg = ips_by_socket[r] + ' disconnected'
-
+                if ips_by_socket[client] in blacklist:
+                    continue
+                if msg.startswith('blacklist'):
+                    try:
+                        add_to_blacklist(msg.split()[1])
+                    except:
+                        pass
                 for receiver in clients:
                     try:
-                        receiver.send('you sent a message: '+msg
-                                      if receiver is r
-                                      else ips_by_socket[client] + ': '+msg)
+                        #receiver.send('you sent a message: '+msg
+                        #              if receiver is r
+                        #              else ips_by_socket[client] + ': '+msg)
+                        receiver.send(msg)
+                        print(ips_by_socket[client], msg)
                     except socket.error:
                         continue
 
