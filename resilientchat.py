@@ -14,28 +14,22 @@ def main():
     clients = []
 
     while True:
-        try:
-            ready_to_read, _, _ = select.select(clients + [server], [], [])
-        except socket.error:
-            ready_to_read = []
+        ready_to_read, _, error = select.select(clients + [server], [], [])
+        if error:
+            print('errors:', error)
         for r in ready_to_read:
             if r is server:
-                try:
-                    client, info = server.accept()
-                except socket.error:
-                    continue
+                client, info = server.accept()
                 print(info, 'just connected')
                 clients.append(client)
                 ips_by_socket[client] = info[0]
             else:
-                try:
-                    msg = r.recv(1000)
-                    if msg == '':
-                        r.close()
-                        msg = ips_by_socket[r] + ' disconnected'
+                msg = r.recv(1000)
+                if msg == '':
+                    r.close()
+                    clients.remove(r)
+                    msg = ips_by_socket[r] + ' disconnected'
 
-                except socket.error:
-                    continue
                 for receiver in clients:
                     try:
                         receiver.send('you sent a message: '+msg
