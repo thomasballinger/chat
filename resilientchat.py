@@ -28,9 +28,7 @@ def main():
 
     while True:
         blacklist = get_ip_blacklist()
-        ready_to_read, _, error = select.select(clients + [server], [], [])
-        if error:
-            print('errors:', error)
+        ready_to_read, _, _ = select.select(clients + [server], [], [])
         for r in ready_to_read:
             if r is server:
                 client, info = server.accept()
