@@ -1,9 +1,12 @@
 import select
 import socket
 import os
+from collections import defaultdict
 
 ips_by_socket = {}
 events = []
+
+buffers_by_socket = defaultdict(list)
 
 
 def log(*stuff):
@@ -52,6 +55,14 @@ def main():
                 if ips_by_socket[client] in blacklist:
                     log('blacklisted user', ips_by_socket[client], 'tried to send', msg)
                     continue
+
+                buffers_by_socket[client] += msg
+                if '\n' not in buffers_by_socket[client]:
+                    continue
+
+                msg = buffers_by_socket[client]
+                buffers_by_socket[client] = ''
+
                 if msg.startswith('blacklist'):
                     try:
                         add_to_blacklist(msg.split()[1])
@@ -59,10 +70,7 @@ def main():
                         pass
                     continue
                 if msg.startswith('log'):
-                    try:
-                        r.sendall(repr(log[-100:]))
-                    except:
-                        pass
+                    r.sendall(repr(events[-100:]))
                     continue
                 for receiver in clients:
                     try:
