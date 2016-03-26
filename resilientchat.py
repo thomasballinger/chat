@@ -3,6 +3,12 @@ import socket
 import os
 
 ips_by_socket = {}
+events = []
+
+
+def log(*stuff):
+    events.append(stuff)
+    print stuff
 
 
 def get_ip_blacklist():
@@ -13,8 +19,10 @@ def get_ip_blacklist():
 
 
 def add_to_blacklist(ip):
+    log('blacklisted', ip)
     with open('ipblacklist.txt', 'a') as f:
         f.write(ip)
+        f.write('\n')
 
 
 def main():
@@ -32,7 +40,7 @@ def main():
         for r in ready_to_read:
             if r is server:
                 client, info = server.accept()
-                print(info, 'just connected')
+                log(info, 'just connected')
                 clients.append(client)
                 ips_by_socket[client] = info[0]
             else:
@@ -42,19 +50,27 @@ def main():
                     clients.remove(r)
                     msg = ips_by_socket[r] + ' disconnected'
                 if ips_by_socket[client] in blacklist:
+                    log('blacklisted user', ips_by_socket[client], 'tried to send', msg)
                     continue
                 if msg.startswith('blacklist'):
                     try:
                         add_to_blacklist(msg.split()[1])
                     except:
                         pass
+                    continue
+                if msg.startswith('log'):
+                    try:
+                        r.sendall(repr(log[-100:]))
+                    except:
+                        pass
+                    continue
                 for receiver in clients:
                     try:
                         #receiver.send('you sent a message: '+msg
                         #              if receiver is r
                         #              else ips_by_socket[client] + ': '+msg)
                         receiver.send(msg)
-                        print(ips_by_socket[client], msg)
+                        log(ips_by_socket[client], msg)
                     except socket.error:
                         continue
 
